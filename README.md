@@ -34,3 +34,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 ```
 
 The bundled model lets the packaged app run OCR without network access.
+
+Run `Start-ReadHelper.cmd` from the project root after building. Files under
+`build/` are intermediate PyInstaller output and cannot be launched directly;
+the distributable application is under `dist/ReadHelper/`.
