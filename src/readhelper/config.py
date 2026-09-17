@@ -1,14 +1,25 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict
 from pathlib import Path
 
 from .models import AppConfig, OverlayStyle
 
 
+def app_data_dir() -> Path:
+    override = os.environ.get("READHELPER_DATA_DIR")
+    if override:
+        return Path(override)
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        return Path(local_app_data) / "ReadHelper"
+    return Path.home() / ".readhelper"
+
+
 def default_config_path() -> Path:
-    return Path.home() / ".readhelper" / "config.json"
+    return app_data_dir() / "config.json"
 
 
 class ConfigStore:
