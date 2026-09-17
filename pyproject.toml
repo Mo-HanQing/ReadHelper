@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "readhelper"
+version = "0.1.0"
+description = "OCR-assisted focus-line overlay for Windows"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "PySide6>=6.7,<7",
+  "mss>=9,<11",
+  "numpy>=1.26,<3",
+  "opencv-python-headless>=4.9,<5",
+  "paddleocr>=3.0,<4",
+  "paddlepaddle>=3.0,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "pytest-qt>=4.4,<5",
+  "pyinstaller>=6.10,<7",
+]
+
+[project.scripts]
+readhelper = "readhelper.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
