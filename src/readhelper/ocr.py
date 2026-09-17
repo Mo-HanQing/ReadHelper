@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -76,9 +77,19 @@ class OcrEngine:
             os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
             from paddleocr import TextDetection
 
+            bundled = bundled_model_dir()
+            arguments = {"model_dir": str(bundled)} if bundled else {
+                "model_name": "PP-OCRv6_tiny_det"
+            }
             self._predictor = TextDetection(
-                model_name="PP-OCRv6_tiny_det",
-                device="cpu",
-                enable_mkldnn=False,
+                **arguments, device="cpu", enable_mkldnn=False
             )
         return self._predictor
+
+
+def bundled_model_dir() -> Path | None:
+    bundle_root = getattr(sys, "_MEIPASS", None)
+    if not bundle_root:
+        return None
+    model_dir = Path(bundle_root) / "models" / "PP-OCRv6_tiny_det"
+    return model_dir if model_dir.exists() else None

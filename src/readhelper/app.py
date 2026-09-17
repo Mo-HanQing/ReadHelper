@@ -12,6 +12,7 @@ from .navigation import LineNavigator
 from .overlay import FocusOverlay
 from .models import DetectedLine, Rect
 from .workers import OcrCoordinator, ScreenChangeWatcher
+from .settings import SettingsDialog
 
 
 class HotkeyId(IntEnum):
@@ -85,6 +86,20 @@ class ReadHelperApplication:
         self.overlay.adjust_padding(amount)
         self.config_store.save(self.config)
 
+    def show_settings(self) -> None:
+        dialog = SettingsDialog(self.config)
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        self.config = dialog.result_config()
+        self.overlay.style = self.config.style
+        self.overlay.update()
+        self.watcher.settle_seconds = self.config.scroll_settle_ms / 1000
+        self.watcher.timer.setInterval(self.config.change_poll_ms)
+        self.ocr.worker.engine.confidence_threshold = self.config.confidence_threshold
+        self.config_store.save(self.config)
+        self.hotkeys.unregister_all()
+        self._register_hotkeys()
+
     def shutdown(self) -> None:
         self.watcher.stop()
         self.ocr.stop()
@@ -146,10 +161,13 @@ class ReadHelperApplication:
         toggle_action.triggered.connect(self.toggle)
         refresh_action = QAction("立即识别", menu)
         refresh_action.triggered.connect(self.refresh)
+        settings_action = QAction("设置...", menu)
+        settings_action.triggered.connect(self.show_settings)
         exit_action = QAction("退出", menu)
         exit_action.triggered.connect(self.shutdown)
         menu.addAction(toggle_action)
         menu.addAction(refresh_action)
+        menu.addAction(settings_action)
         menu.addSeparator()
         menu.addAction(exit_action)
         self.tray.setContextMenu(menu)
