@@ -24,6 +24,8 @@ screenshots are never persisted.
 - `Ctrl+Alt+Left` / `Ctrl+Alt+Right`: change focus-line padding
 
 All shortcuts and visual settings can be changed from the tray menu.
+Mouse-follow mode is enabled by default: moving the pointer selects the nearest
+OCR-detected text line without blocking clicks in the underlying application.
 Runtime diagnostics are written to `%LOCALAPPDATA%\ReadHelper\ReadHelper.log`;
 screenshots and recognized text are never logged.
 

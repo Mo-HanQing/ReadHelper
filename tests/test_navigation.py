@@ -39,3 +39,11 @@ def test_refresh_without_anchor_preserves_previous_vertical_position():
     current = navigator.replace_lines([line(90), line(290), line(490)])
 
     assert current.rect.y == 290
+
+
+def test_select_nearest_y_follows_cursor_position():
+    navigator = LineNavigator()
+    navigator.replace_lines([line(100), line(200), line(300)], anchor_y=100)
+
+    assert navigator.select_nearest_y(225).rect.y == 200
+    assert navigator.select_nearest_y(295).rect.y == 300

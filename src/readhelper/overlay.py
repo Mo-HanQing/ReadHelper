@@ -33,6 +33,10 @@ class FocusOverlay(QWidget):
             return self._active_line.rect.center_y
         return float(self._fallback_center)
 
+    @property
+    def active_line(self) -> DetectedLine | None:
+        return self._active_line
+
     def show_on_cursor_screen(self) -> None:
         screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
         if screen is None:

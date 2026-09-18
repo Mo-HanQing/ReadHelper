@@ -43,3 +43,12 @@ class LineNavigator:
             return None
         self._index = max(0, min(len(self._lines) - 1, self._index + offset))
         return self.current
+
+    def select_nearest_y(self, y: float) -> DetectedLine | None:
+        if not self._lines:
+            return None
+        self._index = min(
+            range(len(self._lines)),
+            key=lambda index: abs(self._lines[index].rect.center_y - y),
+        )
+        return self.current

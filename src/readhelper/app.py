@@ -4,7 +4,8 @@ import sys
 import logging
 from enum import IntEnum
 
-from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import QAction, QColor, QCursor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from .config import ConfigStore, app_data_dir
@@ -59,6 +60,9 @@ class ReadHelperApplication:
             self.config.scroll_settle_ms,
         )
         self.watcher.settled.connect(self.refresh)
+        self.mouse_timer = QTimer(application)
+        self.mouse_timer.setInterval(self.config.mouse_follow_poll_ms)
+        self.mouse_timer.timeout.connect(self._follow_mouse)
         self.hotkeys = GlobalHotkeys()
         application.installNativeEventFilter(self.hotkeys)
         self.tray = QSystemTrayIcon(make_icon(), application)
@@ -69,6 +73,7 @@ class ReadHelperApplication:
         self.tray.show()
         self.overlay.show_on_cursor_screen()
         self.watcher.start()
+        self.mouse_timer.start()
         self.refresh()
 
     def toggle(self) -> None:
@@ -100,11 +105,13 @@ class ReadHelperApplication:
         self.watcher.settle_seconds = self.config.scroll_settle_ms / 1000
         self.watcher.timer.setInterval(self.config.change_poll_ms)
         self.ocr.worker.engine.confidence_threshold = self.config.confidence_threshold
+        self.mouse_timer.setInterval(self.config.mouse_follow_poll_ms)
         self.config_store.save(self.config)
         self.hotkeys.unregister_all()
         self._register_hotkeys()
 
     def shutdown(self) -> None:
+        self.mouse_timer.stop()
         self.watcher.stop()
         self.ocr.stop()
         self.hotkeys.unregister_all()
@@ -117,7 +124,11 @@ class ReadHelperApplication:
 
     def _apply_lines(self, lines: list[DetectedLine]) -> None:
         logger.info("OCR completed with %d visual lines", len(lines))
-        anchor = self.overlay.active_center_y
+        anchor = (
+            QCursor.pos().y()
+            if self.config.mouse_follow_enabled
+            else self.overlay.active_center_y
+        )
         current = self.navigator.replace_lines(lines, anchor)
         self.overlay.set_active_line(current)
         if not lines:
@@ -138,6 +149,25 @@ class ReadHelperApplication:
     def _set_busy(self, busy: bool) -> None:
         if busy:
             self.tray.setToolTip("ReadHelper - 正在识别...")
+
+    def _follow_mouse(self) -> None:
+        if not self.config.mouse_follow_enabled or not self.overlay.isVisible():
+            return
+        position = QCursor.pos()
+        screen = QApplication.screenAt(position)
+        if screen is None:
+            return
+        screen_geometry = screen.geometry()
+        if screen_geometry != self.overlay.geometry():
+            self.overlay.show_on_cursor_screen()
+            self.navigator.replace_lines([])
+            self.overlay.set_active_line(None)
+            self.watcher.reset()
+            self.refresh()
+            return
+        line = self.navigator.select_nearest_y(position.y())
+        if line is not None and line != self.overlay.active_line:
+            self.overlay.set_active_line(line)
 
     def _register_hotkeys(self) -> None:
         entries = (
