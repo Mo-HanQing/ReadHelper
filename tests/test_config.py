@@ -52,7 +52,16 @@ class ConfigStoreTests(unittest.TestCase):
         shortcuts = ConfigStore(self.path).load().shortcuts
         self.assertEqual(shortcuts["toggle"], "Ctrl+Shift+Space")
         self.assertEqual(shortcuts["lock"], "Ctrl+Alt+L")
-        self.assertEqual(shortcuts["switch_mode"], "Ctrl+Alt+M")
+        self.assertEqual(shortcuts["switch_mode"], "Ctrl+Shift+M")
+
+    def test_unavailable_mode_shortcut_is_migrated(self):
+        self.path.write_text(
+            '{"shortcuts": {"switch_mode": "Ctrl+Alt+M"}}', encoding="utf-8"
+        )
+
+        self.assertEqual(
+            ConfigStore(self.path).load().shortcuts["switch_mode"], "Ctrl+Shift+M"
+        )
 
 
 if __name__ == "__main__":

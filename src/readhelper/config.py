@@ -36,7 +36,10 @@ class ConfigStore:
             if "control_mode" not in raw and legacy_mouse_follow is not None:
                 raw["control_mode"] = "mouse" if legacy_mouse_follow else "keyboard"
             shortcuts = AppConfig().shortcuts
-            shortcuts.update(raw.pop("shortcuts", {}))
+            saved_shortcuts = raw.pop("shortcuts", {})
+            if saved_shortcuts.get("switch_mode") == "Ctrl+Alt+M":
+                saved_shortcuts["switch_mode"] = shortcuts["switch_mode"]
+            shortcuts.update(saved_shortcuts)
             raw["shortcuts"] = shortcuts
             return AppConfig(style=style, **raw)
         except (OSError, ValueError, TypeError):
