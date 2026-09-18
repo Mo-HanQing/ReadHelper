@@ -44,6 +44,15 @@ class ConfigStoreTests(unittest.TestCase):
 
         self.assertEqual(ConfigStore(self.path).load().control_mode, "keyboard")
 
+    def test_missing_shortcuts_receive_new_defaults(self):
+        self.path.write_text(
+            '{"shortcuts": {"toggle": "Ctrl+Shift+Space"}}', encoding="utf-8"
+        )
+
+        shortcuts = ConfigStore(self.path).load().shortcuts
+        self.assertEqual(shortcuts["toggle"], "Ctrl+Shift+Space")
+        self.assertEqual(shortcuts["lock"], "Ctrl+Alt+L")
+
 
 if __name__ == "__main__":
     unittest.main()

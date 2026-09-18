@@ -27,6 +27,7 @@ class HotkeyId(IntEnum):
     REFRESH = 4
     SHRINK = 5
     GROW = 6
+    LOCK = 7
 
 
 def make_icon() -> QIcon:
@@ -44,6 +45,7 @@ class ReadHelperApplication:
         self.config_store = ConfigStore()
         self.config = self.config_store.load()
         self.navigator = LineNavigator()
+        self.is_locked = False
         self.overlay = FocusOverlay(self.config.style)
         self.ocr = OcrCoordinator(
             app_data_dir() / "paddlex",
@@ -86,9 +88,16 @@ class ReadHelperApplication:
             self.refresh()
 
     def move_line(self, offset: int) -> None:
-        if self.config.control_mode != "keyboard":
+        if self.is_locked or self.config.control_mode != "keyboard":
             return
         self.overlay.set_active_line(self.navigator.move(offset))
+
+    def toggle_lock(self) -> None:
+        self.is_locked = not self.is_locked
+        self.lock_action.setChecked(self.is_locked)
+        state = "已锁定当前行" if self.is_locked else "已解锁当前行"
+        self.tray.setToolTip(f"ReadHelper - {state}")
+        self.tray.showMessage("ReadHelper", state, self.tray.MessageIcon.Information, 1200)
 
     def refresh(self) -> None:
         if self.overlay.isVisible():
@@ -128,6 +137,9 @@ class ReadHelperApplication:
 
     def _apply_lines(self, lines: list[DetectedLine]) -> None:
         logger.info("OCR completed with %d visual lines", len(lines))
+        if self.is_locked:
+            self.navigator.replace_lines(lines, self.overlay.active_center_y)
+            return
         anchor = (
             QCursor.pos().y()
             if self.config.control_mode == "mouse"
@@ -155,7 +167,11 @@ class ReadHelperApplication:
             self.tray.setToolTip("ReadHelper - 正在识别...")
 
     def _follow_mouse(self) -> None:
-        if self.config.control_mode != "mouse" or not self.overlay.isVisible():
+        if (
+            self.is_locked
+            or self.config.control_mode != "mouse"
+            or not self.overlay.isVisible()
+        ):
             return
         position = QCursor.pos()
         if position == self._last_mouse_position:
@@ -196,6 +212,7 @@ class ReadHelperApplication:
             (HotkeyId.PREVIOUS, "previous_line", lambda: self.move_line(-1)),
             (HotkeyId.NEXT, "next_line", lambda: self.move_line(1)),
             (HotkeyId.REFRESH, "refresh", self.refresh),
+            (HotkeyId.LOCK, "lock", self.toggle_lock),
             (HotkeyId.SHRINK, "shrink", lambda: self.adjust_padding(-2)),
             (HotkeyId.GROW, "grow", lambda: self.adjust_padding(2)),
         )
@@ -218,6 +235,9 @@ class ReadHelperApplication:
         toggle_action.triggered.connect(self.toggle)
         refresh_action = QAction("立即识别", menu)
         refresh_action.triggered.connect(self.refresh)
+        self.lock_action = QAction("锁定当前行", menu)
+        self.lock_action.setCheckable(True)
+        self.lock_action.triggered.connect(self.toggle_lock)
         mode_menu = QMenu("控制模式", menu)
         mode_group = QActionGroup(mode_menu)
         mode_group.setExclusive(True)
@@ -238,6 +258,7 @@ class ReadHelperApplication:
         exit_action.triggered.connect(self.shutdown)
         menu.addAction(toggle_action)
         menu.addAction(refresh_action)
+        menu.addAction(self.lock_action)
         menu.addMenu(mode_menu)
         menu.addAction(settings_action)
         menu.addSeparator()

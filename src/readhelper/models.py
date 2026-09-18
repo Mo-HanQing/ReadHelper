@@ -48,6 +48,7 @@ class AppConfig:
             "previous_line": "Alt+Up",
             "next_line": "Alt+Down",
             "refresh": "Ctrl+Alt+R",
+            "lock": "Ctrl+Alt+L",
             "shrink": "Ctrl+Alt+Left",
             "grow": "Ctrl+Alt+Right",
         }

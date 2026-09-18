@@ -35,6 +35,9 @@ class ConfigStore:
             legacy_mouse_follow = raw.pop("mouse_follow_enabled", None)
             if "control_mode" not in raw and legacy_mouse_follow is not None:
                 raw["control_mode"] = "mouse" if legacy_mouse_follow else "keyboard"
+            shortcuts = AppConfig().shortcuts
+            shortcuts.update(raw.pop("shortcuts", {}))
+            raw["shortcuts"] = shortcuts
             return AppConfig(style=style, **raw)
         except (OSError, ValueError, TypeError):
             return AppConfig()
