@@ -30,6 +30,8 @@ Mouse-follow mode is enabled by default: moving the pointer selects the nearest
 OCR-detected text line without blocking clicks in the underlying application.
 Use the tray menu's **Control mode** submenu to switch between mouse-follow and
 keyboard-only navigation. The two modes are mutually exclusive.
+Use the tray menu's **Target display** submenu to choose the only monitor where
+the overlay, OCR, and mouse-follow behavior are active.
 Runtime diagnostics are written to `%LOCALAPPDATA%\ReadHelper\ReadHelper.log`;
 screenshots and recognized text are never logged.
 

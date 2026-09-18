@@ -41,6 +41,7 @@ class AppConfig:
     change_poll_ms: int = 180
     capture_max_width: int = 1600
     control_mode: str = "mouse"
+    target_screen_name: str = ""
     mouse_follow_poll_ms: int = 32
     shortcuts: dict[str, str] = field(
         default_factory=lambda: {

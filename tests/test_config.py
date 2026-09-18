@@ -27,6 +27,7 @@ class ConfigStoreTests(unittest.TestCase):
         self.assertEqual(loaded.scroll_settle_ms, 650)
         self.assertEqual(loaded.style.dim_opacity, 170)
         self.assertEqual(loaded.shortcuts["toggle"], "Ctrl+Shift+Space")
+        self.assertEqual(loaded.target_screen_name, "")
 
     def test_invalid_config_uses_defaults(self):
         self.path.write_text("not json", encoding="utf-8")

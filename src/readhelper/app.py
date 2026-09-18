@@ -45,6 +45,11 @@ class ReadHelperApplication:
         self.application = application
         self.config_store = ConfigStore()
         self.config = self.config_store.load()
+        initial_screen = self._find_screen(self.config.target_screen_name)
+        if initial_screen is None:
+            initial_screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
+        if initial_screen is not None:
+            self.config.target_screen_name = initial_screen.name()
         # Persist newly introduced defaults when loading an older config file.
         self.config_store.save(self.config)
         self.navigator = LineNavigator()
@@ -74,10 +79,14 @@ class ReadHelperApplication:
         self.tray = QSystemTrayIcon(make_icon(), application)
         self._configure_tray()
         self._register_hotkeys()
+        application.screenAdded.connect(self._screens_changed)
+        application.screenRemoved.connect(self._screens_changed)
 
     def start(self) -> None:
         self.tray.show()
-        self.overlay.show_on_cursor_screen()
+        screen = self._target_screen()
+        if screen is not None:
+            self.overlay.show_on_screen(screen)
         self.watcher.start()
         self.mouse_timer.start()
         self.refresh()
@@ -86,7 +95,10 @@ class ReadHelperApplication:
         if self.overlay.isVisible():
             self.overlay.hide()
         else:
-            self.overlay.show_on_cursor_screen()
+            screen = self._target_screen()
+            if screen is None:
+                return
+            self.overlay.show_on_screen(screen)
             self.watcher.reset()
             self.refresh()
 
@@ -181,15 +193,8 @@ class ReadHelperApplication:
             return
         self._last_mouse_position = position
         screen = QApplication.screenAt(position)
-        if screen is None:
-            return
-        screen_geometry = screen.geometry()
-        if screen_geometry != self.overlay.geometry():
-            self.overlay.show_on_cursor_screen()
-            self.navigator.replace_lines([])
-            self.overlay.set_active_line(None)
-            self.watcher.reset()
-            self.refresh()
+        target_screen = self._target_screen()
+        if screen is None or target_screen is None or screen.name() != target_screen.name():
             return
         line = self.navigator.select_nearest_y(position.y())
         if line is not None and line != self.overlay.active_line:
@@ -219,6 +224,66 @@ class ReadHelperApplication:
     def _sync_mode_actions(self) -> None:
         for mode, action in self.mode_actions.items():
             action.setChecked(self.config.control_mode == mode)
+
+    def _find_screen(self, name: str):
+        return next((screen for screen in QApplication.screens() if screen.name() == name), None)
+
+    def _target_screen(self):
+        return self._find_screen(self.config.target_screen_name)
+
+    def set_target_screen(self, name: str) -> None:
+        screen = self._find_screen(name)
+        if screen is None:
+            return
+        self.config.target_screen_name = screen.name()
+        self.config_store.save(self.config)
+        self._rebuild_screen_menu()
+        if self.overlay.isVisible():
+            self.overlay.show_on_screen(screen)
+            self.navigator.replace_lines([])
+            self.overlay.set_active_line(None)
+            self.watcher.reset()
+            self.refresh()
+        self.tray.showMessage(
+            "ReadHelper",
+            f"目标显示器已切换为 {self._screen_label(screen)}",
+            self.tray.MessageIcon.Information,
+            1500,
+        )
+
+    def _screen_label(self, screen) -> str:
+        screens = QApplication.screens()
+        index = screens.index(screen) + 1
+        geometry = screen.geometry()
+        suffix = "（主显示器）" if screen == QApplication.primaryScreen() else ""
+        return f"显示器 {index}  {geometry.width()}×{geometry.height()}{suffix}"
+
+    def _rebuild_screen_menu(self) -> None:
+        self.screen_menu.clear()
+        self.screen_group = QActionGroup(self.screen_menu)
+        self.screen_group.setExclusive(True)
+        for screen in QApplication.screens():
+            action = QAction(self._screen_label(screen), self.screen_menu)
+            action.setCheckable(True)
+            action.setChecked(screen.name() == self.config.target_screen_name)
+            action.triggered.connect(
+                lambda checked=False, value=screen.name(): self.set_target_screen(value)
+            )
+            self.screen_group.addAction(action)
+            self.screen_menu.addAction(action)
+
+    def _screens_changed(self, *_args) -> None:
+        screen = self._target_screen()
+        if screen is None:
+            screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
+            if screen is not None:
+                self.config.target_screen_name = screen.name()
+                self.config_store.save(self.config)
+        self._rebuild_screen_menu()
+        if screen is not None and self.overlay.isVisible():
+            self.overlay.show_on_screen(screen)
+            self.watcher.reset()
+            self.refresh()
 
     def _register_hotkeys(self) -> None:
         entries = (
@@ -270,6 +335,9 @@ class ReadHelperApplication:
             mode_menu.addAction(action)
             self.mode_actions[mode] = action
         self._sync_mode_actions()
+        self.screen_menu = QMenu("目标显示器", menu)
+        self.screen_menu.aboutToShow.connect(self._rebuild_screen_menu)
+        self._rebuild_screen_menu()
         settings_action = QAction("设置...", menu)
         settings_action.triggered.connect(self.show_settings)
         exit_action = QAction("退出", menu)
@@ -278,6 +346,7 @@ class ReadHelperApplication:
         menu.addAction(refresh_action)
         menu.addAction(self.lock_action)
         menu.addMenu(mode_menu)
+        menu.addMenu(self.screen_menu)
         menu.addAction(settings_action)
         menu.addSeparator()
         menu.addAction(exit_action)

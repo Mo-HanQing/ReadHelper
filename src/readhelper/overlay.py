@@ -3,8 +3,8 @@ from __future__ import annotations
 import ctypes
 
 from PySide6.QtCore import QRect, Qt
-from PySide6.QtGui import QColor, QCursor, QPainter, QPen
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtGui import QColor, QPainter, QPen, QScreen
+from PySide6.QtWidgets import QWidget
 
 from .models import DetectedLine, OverlayStyle
 
@@ -37,10 +37,7 @@ class FocusOverlay(QWidget):
     def active_line(self) -> DetectedLine | None:
         return self._active_line
 
-    def show_on_cursor_screen(self) -> None:
-        screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
-        if screen is None:
-            return
+    def show_on_screen(self, screen: QScreen) -> None:
         geometry = screen.geometry()
         self.setGeometry(geometry)
         if not self._fallback_center:
