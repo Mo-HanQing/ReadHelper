@@ -39,6 +39,11 @@ class ConfigStoreTests(unittest.TestCase):
         raw = json.loads(self.path.read_text(encoding="utf-8"))
         self.assertEqual(raw["style"]["border_width"], 2)
 
+    def test_legacy_mouse_follow_setting_is_migrated(self):
+        self.path.write_text('{"mouse_follow_enabled": false}', encoding="utf-8")
+
+        self.assertEqual(ConfigStore(self.path).load().control_mode, "keyboard")
+
 
 if __name__ == "__main__":
     unittest.main()

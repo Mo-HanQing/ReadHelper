@@ -8,7 +8,7 @@ def test_settings_dialog_builds_config(qtbot):
     qtbot.addWidget(dialog)
     dialog.opacity.setValue(180)
     dialog.padding.setValue(12)
-    dialog.mouse_follow.setChecked(False)
+    dialog.control_mode.setCurrentIndex(dialog.control_mode.findData("keyboard"))
     dialog.shortcut_edits["toggle"].setText("Ctrl+Shift+Space")
 
     result = dialog.result_config()
@@ -16,5 +16,5 @@ def test_settings_dialog_builds_config(qtbot):
     assert result.style.dim_opacity == 180
     assert result.style.vertical_padding == 12
     assert result.shortcuts["toggle"] == "Ctrl+Shift+Space"
-    assert result.mouse_follow_enabled is False
+    assert result.control_mode == "keyboard"
     assert source.style.dim_opacity == 140

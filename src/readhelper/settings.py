@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QColorDialog,
-    QCheckBox,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
@@ -72,7 +72,7 @@ class SettingsDialog(QDialog):
         config.confidence_threshold = self.confidence.value()
         config.scroll_settle_ms = self.settle_ms.value()
         config.change_poll_ms = self.poll_ms.value()
-        config.mouse_follow_enabled = self.mouse_follow.isChecked()
+        config.control_mode = self.control_mode.currentData()
         config.shortcuts = {
             name: editor.text().strip() for name, editor in self.shortcut_edits.items()
         }
@@ -104,9 +104,12 @@ class SettingsDialog(QDialog):
     def _behavior_tab(self, config: AppConfig) -> QWidget:
         tab = QWidget()
         form = QFormLayout(tab)
-        self.mouse_follow = QCheckBox("鼠标移动时吸附到最近文字行")
-        self.mouse_follow.setChecked(config.mouse_follow_enabled)
-        form.addRow("鼠标跟随", self.mouse_follow)
+        self.control_mode = QComboBox()
+        self.control_mode.addItem("鼠标跟随", "mouse")
+        self.control_mode.addItem("键盘控制", "keyboard")
+        selected = self.control_mode.findData(config.control_mode)
+        self.control_mode.setCurrentIndex(max(0, selected))
+        form.addRow("控制模式", self.control_mode)
         self.confidence = QDoubleSpinBox()
         self.confidence.setRange(0.1, 0.95)
         self.confidence.setSingleStep(0.05)

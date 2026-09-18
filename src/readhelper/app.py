@@ -4,8 +4,8 @@ import sys
 import logging
 from enum import IntEnum
 
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QAction, QColor, QCursor, QIcon, QPainter, QPixmap
+from PySide6.QtCore import QPoint, QTimer
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCursor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from .config import ConfigStore, app_data_dir
@@ -63,6 +63,7 @@ class ReadHelperApplication:
         self.mouse_timer = QTimer(application)
         self.mouse_timer.setInterval(self.config.mouse_follow_poll_ms)
         self.mouse_timer.timeout.connect(self._follow_mouse)
+        self._last_mouse_position = QCursor.pos()
         self.hotkeys = GlobalHotkeys()
         application.installNativeEventFilter(self.hotkeys)
         self.tray = QSystemTrayIcon(make_icon(), application)
@@ -85,6 +86,8 @@ class ReadHelperApplication:
             self.refresh()
 
     def move_line(self, offset: int) -> None:
+        if self.config.control_mode != "keyboard":
+            return
         self.overlay.set_active_line(self.navigator.move(offset))
 
     def refresh(self) -> None:
@@ -106,6 +109,7 @@ class ReadHelperApplication:
         self.watcher.timer.setInterval(self.config.change_poll_ms)
         self.ocr.worker.engine.confidence_threshold = self.config.confidence_threshold
         self.mouse_timer.setInterval(self.config.mouse_follow_poll_ms)
+        self._sync_mode_actions()
         self.config_store.save(self.config)
         self.hotkeys.unregister_all()
         self._register_hotkeys()
@@ -126,7 +130,7 @@ class ReadHelperApplication:
         logger.info("OCR completed with %d visual lines", len(lines))
         anchor = (
             QCursor.pos().y()
-            if self.config.mouse_follow_enabled
+            if self.config.control_mode == "mouse"
             else self.overlay.active_center_y
         )
         current = self.navigator.replace_lines(lines, anchor)
@@ -151,9 +155,12 @@ class ReadHelperApplication:
             self.tray.setToolTip("ReadHelper - 正在识别...")
 
     def _follow_mouse(self) -> None:
-        if not self.config.mouse_follow_enabled or not self.overlay.isVisible():
+        if self.config.control_mode != "mouse" or not self.overlay.isVisible():
             return
         position = QCursor.pos()
+        if position == self._last_mouse_position:
+            return
+        self._last_mouse_position = position
         screen = QApplication.screenAt(position)
         if screen is None:
             return
@@ -168,6 +175,20 @@ class ReadHelperApplication:
         line = self.navigator.select_nearest_y(position.y())
         if line is not None and line != self.overlay.active_line:
             self.overlay.set_active_line(line)
+
+    def set_control_mode(self, mode: str) -> None:
+        if mode not in {"mouse", "keyboard"}:
+            return
+        self.config.control_mode = mode
+        self.config_store.save(self.config)
+        self._sync_mode_actions()
+        if mode == "mouse":
+            self._last_mouse_position = QCursor.pos() + QPoint(1, 1)
+            self._follow_mouse()
+
+    def _sync_mode_actions(self) -> None:
+        for mode, action in self.mode_actions.items():
+            action.setChecked(self.config.control_mode == mode)
 
     def _register_hotkeys(self) -> None:
         entries = (
@@ -197,12 +218,27 @@ class ReadHelperApplication:
         toggle_action.triggered.connect(self.toggle)
         refresh_action = QAction("立即识别", menu)
         refresh_action.triggered.connect(self.refresh)
+        mode_menu = QMenu("控制模式", menu)
+        mode_group = QActionGroup(mode_menu)
+        mode_group.setExclusive(True)
+        self.mode_actions = {}
+        for mode, label in (("mouse", "鼠标跟随"), ("keyboard", "键盘控制")):
+            action = QAction(label, mode_menu)
+            action.setCheckable(True)
+            action.triggered.connect(
+                lambda checked=False, value=mode: self.set_control_mode(value)
+            )
+            mode_group.addAction(action)
+            mode_menu.addAction(action)
+            self.mode_actions[mode] = action
+        self._sync_mode_actions()
         settings_action = QAction("设置...", menu)
         settings_action.triggered.connect(self.show_settings)
         exit_action = QAction("退出", menu)
         exit_action.triggered.connect(self.shutdown)
         menu.addAction(toggle_action)
         menu.addAction(refresh_action)
+        menu.addMenu(mode_menu)
         menu.addAction(settings_action)
         menu.addSeparator()
         menu.addAction(exit_action)

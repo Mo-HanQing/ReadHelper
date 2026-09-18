@@ -32,6 +32,9 @@ class ConfigStore:
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
             style = OverlayStyle(**raw.pop("style", {}))
+            legacy_mouse_follow = raw.pop("mouse_follow_enabled", None)
+            if "control_mode" not in raw and legacy_mouse_follow is not None:
+                raw["control_mode"] = "mouse" if legacy_mouse_follow else "keyboard"
             return AppConfig(style=style, **raw)
         except (OSError, ValueError, TypeError):
             return AppConfig()

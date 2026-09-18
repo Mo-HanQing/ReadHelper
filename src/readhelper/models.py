@@ -40,7 +40,7 @@ class AppConfig:
     scroll_settle_ms: int = 400
     change_poll_ms: int = 180
     capture_max_width: int = 1600
-    mouse_follow_enabled: bool = True
+    control_mode: str = "mouse"
     mouse_follow_poll_ms: int = 32
     shortcuts: dict[str, str] = field(
         default_factory=lambda: {
