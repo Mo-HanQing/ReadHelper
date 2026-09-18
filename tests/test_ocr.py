@@ -1,7 +1,9 @@
 import numpy as np
+import sys
 
 from readhelper.models import DetectedLine, Rect
 from readhelper.ocr import OcrEngine, merge_visual_lines
+from readhelper.ocr import bundled_model_dir
 
 
 def test_merge_visual_lines_combines_fragments_on_same_row():
@@ -40,3 +42,11 @@ def test_ocr_engine_maps_scaled_coordinates():
     lines = engine.detect(np.zeros((10, 10, 3)), 100, 200, 0.5)
 
     assert lines[0].rect == Rect(120, 240, 200, 40)
+
+
+def test_bundled_model_dir_uses_pyinstaller_root(tmp_path, monkeypatch):
+    model = tmp_path / "models" / "PP-OCRv6_tiny_det"
+    model.mkdir(parents=True)
+    monkeypatch.setattr(sys, "_MEIPASS", str(tmp_path), raising=False)
+
+    assert bundled_model_dir() == model

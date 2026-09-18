@@ -78,9 +78,9 @@ class OcrEngine:
             from paddleocr import TextDetection
 
             bundled = bundled_model_dir()
-            arguments = {"model_dir": str(bundled)} if bundled else {
-                "model_name": "PP-OCRv6_tiny_det"
-            }
+            arguments = {"model_name": "PP-OCRv6_tiny_det"}
+            if bundled:
+                arguments["model_dir"] = str(bundled)
             self._predictor = TextDetection(
                 **arguments, device="cpu", enable_mkldnn=False
             )

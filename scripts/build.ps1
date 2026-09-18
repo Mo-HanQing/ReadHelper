@@ -22,5 +22,7 @@ if (-not (Test-Path -LiteralPath $Model)) {
     --collect-all paddlex `
     --collect-all paddleocr `
     --collect-all cv2 `
+    --copy-metadata pypdfium2 `
+    --copy-metadata pyclipper `
     --add-data "$Model;models\PP-OCRv6_tiny_det" `
     (Join-Path $ProjectRoot "src\readhelper\__main__.py")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import traceback
 from pathlib import Path
 from typing import Callable
 
@@ -27,8 +28,8 @@ class OcrWorker(QObject):
             image, scale = resize_for_ocr(image, self.max_width)
             lines = self.engine.detect(image, region.x, region.y, scale)
             self.completed.emit(lines)
-        except Exception as error:  # The GUI must survive OCR/runtime failures.
-            self.failed.emit(str(error))
+        except Exception:  # The GUI must survive OCR/runtime failures.
+            self.failed.emit(traceback.format_exc())
 
 
 class OcrCoordinator(QObject):

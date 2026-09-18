@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import logging
 from enum import IntEnum
 
 from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
@@ -13,6 +14,9 @@ from .overlay import FocusOverlay
 from .models import DetectedLine, Rect
 from .workers import OcrCoordinator, ScreenChangeWatcher
 from .settings import SettingsDialog
+from .logging_config import configure_logging
+
+logger = logging.getLogger(__name__)
 
 
 class HotkeyId(IntEnum):
@@ -112,6 +116,7 @@ class ReadHelperApplication:
         return Rect(geometry.x(), geometry.y(), geometry.width(), geometry.height())
 
     def _apply_lines(self, lines: list[DetectedLine]) -> None:
+        logger.info("OCR completed with %d visual lines", len(lines))
         anchor = self.overlay.active_center_y
         current = self.navigator.replace_lines(lines, anchor)
         self.overlay.set_active_line(current)
@@ -121,10 +126,11 @@ class ReadHelperApplication:
             self.tray.setToolTip(f"ReadHelper - 已检测 {len(lines)} 行")
 
     def _show_ocr_error(self, message: str) -> None:
+        logger.error("OCR failed\n%s", message)
         self.tray.setToolTip("ReadHelper - OCR 失败")
         self.tray.showMessage(
             "ReadHelper OCR 失败",
-            message[:240],
+            "完整错误已写入 ReadHelper.log",
             self.tray.MessageIcon.Warning,
             4500,
         )
@@ -179,6 +185,8 @@ class ReadHelperApplication:
 
 
 def main() -> int:
+    configure_logging()
+    logger.info("ReadHelper starting")
     application = QApplication(sys.argv)
     application.setApplicationName("ReadHelper")
     application.setQuitOnLastWindowClosed(False)
