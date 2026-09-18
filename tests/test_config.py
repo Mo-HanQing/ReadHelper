@@ -52,6 +52,7 @@ class ConfigStoreTests(unittest.TestCase):
         shortcuts = ConfigStore(self.path).load().shortcuts
         self.assertEqual(shortcuts["toggle"], "Ctrl+Shift+Space")
         self.assertEqual(shortcuts["lock"], "Ctrl+Alt+L")
+        self.assertEqual(shortcuts["switch_mode"], "Ctrl+Alt+M")
 
 
 if __name__ == "__main__":

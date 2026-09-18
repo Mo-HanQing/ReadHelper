@@ -28,6 +28,7 @@ class HotkeyId(IntEnum):
     SHRINK = 5
     GROW = 6
     LOCK = 7
+    SWITCH_MODE = 8
 
 
 def make_icon() -> QIcon:
@@ -204,6 +205,17 @@ class ReadHelperApplication:
             self._last_mouse_position = QCursor.pos() + QPoint(1, 1)
             self._follow_mouse()
 
+    def toggle_control_mode(self) -> None:
+        mode = "keyboard" if self.config.control_mode == "mouse" else "mouse"
+        self.set_control_mode(mode)
+        label = "键盘控制" if mode == "keyboard" else "鼠标跟随"
+        self.tray.showMessage(
+            "ReadHelper",
+            f"已切换为{label}模式",
+            self.tray.MessageIcon.Information,
+            1200,
+        )
+
     def _sync_mode_actions(self) -> None:
         for mode, action in self.mode_actions.items():
             action.setChecked(self.config.control_mode == mode)
@@ -215,6 +227,7 @@ class ReadHelperApplication:
             (HotkeyId.NEXT, "next_line", lambda: self.move_line(1)),
             (HotkeyId.REFRESH, "refresh", self.refresh),
             (HotkeyId.LOCK, "lock", self.toggle_lock),
+            (HotkeyId.SWITCH_MODE, "switch_mode", self.toggle_control_mode),
             (HotkeyId.SHRINK, "shrink", lambda: self.adjust_padding(-2)),
             (HotkeyId.GROW, "grow", lambda: self.adjust_padding(2)),
         )

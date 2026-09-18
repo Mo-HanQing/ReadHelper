@@ -22,6 +22,7 @@ screenshots are never persisted.
 - `Alt+Up` / `Alt+Down`: move between detected lines
 - `Ctrl+Alt+R`: refresh OCR immediately
 - `Ctrl+Alt+L`: lock or unlock the current reading line
+- `Ctrl+Alt+M`: switch between mouse-follow and keyboard control
 - `Ctrl+Alt+Left` / `Ctrl+Alt+Right`: change focus-line padding
 
 All shortcuts and visual settings can be changed from the tray menu.

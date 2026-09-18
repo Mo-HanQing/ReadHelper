@@ -49,6 +49,7 @@ class AppConfig:
             "next_line": "Alt+Down",
             "refresh": "Ctrl+Alt+R",
             "lock": "Ctrl+Alt+L",
+            "switch_mode": "Ctrl+Alt+M",
             "shrink": "Ctrl+Alt+Left",
             "grow": "Ctrl+Alt+Right",
         }

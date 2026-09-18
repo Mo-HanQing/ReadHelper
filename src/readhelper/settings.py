@@ -31,6 +31,7 @@ SHORTCUT_LABELS = {
     "next_line": "下一行",
     "refresh": "立即识别",
     "lock": "锁定/解锁当前行",
+    "switch_mode": "切换控制模式",
     "shrink": "减小阅读带",
     "grow": "增大阅读带",
 }
