@@ -20,7 +20,7 @@ ReadHelper 是一款 Windows 辅助阅读工具。它使用本地 OCR 自动识�
 
 ### 下载与运行
 
-1. 从 GitHub Releases 下载最新的 Windows 压缩包。
+1. 从 [GitHub Releases](https://github.com/Mo-HanQing/ReadHelper/releases/latest) 下载最新的 Windows 压缩包。
 2. 解压完整文件夹，不要只复制 `ReadHelper.exe`。
 3. 双击 `ReadHelper.exe` 启动。
 4. 启动后，右键系统托盘中的 ReadHelper 图标进行设置。
@@ -75,7 +75,7 @@ ReadHelper is a Windows reading aid that uses local OCR to detect text lines on 
 
 ### Download and Run
 
-1. Download the latest Windows archive from GitHub Releases.
+1. Download the latest Windows archive from [GitHub Releases](https://github.com/Mo-HanQing/ReadHelper/releases/latest).
 2. Extract the complete folder. Do not copy `ReadHelper.exe` by itself.
 3. Double-click `ReadHelper.exe`.
 4. Right-click the ReadHelper system tray icon to configure the app.
