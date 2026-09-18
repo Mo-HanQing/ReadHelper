@@ -44,6 +44,8 @@ class ReadHelperApplication:
         self.application = application
         self.config_store = ConfigStore()
         self.config = self.config_store.load()
+        # Persist newly introduced defaults when loading an older config file.
+        self.config_store.save(self.config)
         self.navigator = LineNavigator()
         self.is_locked = False
         self.overlay = FocusOverlay(self.config.style)
@@ -216,11 +218,14 @@ class ReadHelperApplication:
             (HotkeyId.SHRINK, "shrink", lambda: self.adjust_padding(-2)),
             (HotkeyId.GROW, "grow", lambda: self.adjust_padding(2)),
         )
-        failed = [
-            self.config.shortcuts[name]
-            for hotkey_id, name, callback in entries
-            if not self.hotkeys.register(hotkey_id, self.config.shortcuts[name], callback)
-        ]
+        failed = []
+        for hotkey_id, name, callback in entries:
+            shortcut = self.config.shortcuts[name]
+            if self.hotkeys.register(hotkey_id, shortcut, callback):
+                logger.info("Registered hotkey %s: %s", name, shortcut)
+            else:
+                logger.error("Failed to register hotkey %s: %s", name, shortcut)
+                failed.append(shortcut)
         if failed:
             self.tray.showMessage(
                 "ReadHelper",
