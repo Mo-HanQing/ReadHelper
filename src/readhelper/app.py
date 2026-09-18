@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import ctypes
 import sys
 import logging
 from enum import IntEnum
+from pathlib import Path
 
 from PySide6.QtCore import QPoint, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCursor, QIcon, QPainter, QPixmap
@@ -32,6 +34,10 @@ class HotkeyId(IntEnum):
 
 
 def make_icon() -> QIcon:
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+    bundled = QIcon(str(base / "assets" / "readhelper.ico"))
+    if not bundled.isNull():
+        return bundled
     pixmap = QPixmap(32, 32)
     pixmap.fill(QColor("#16181C"))
     painter = QPainter(pixmap)
@@ -361,8 +367,15 @@ class ReadHelperApplication:
 def main() -> int:
     configure_logging()
     logger.info("ReadHelper starting")
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "ReadHelper.FocusReader"
+        )
+    except (AttributeError, OSError):
+        logger.warning("Could not set the Windows application ID", exc_info=True)
     application = QApplication(sys.argv)
     application.setApplicationName("ReadHelper")
+    application.setWindowIcon(make_icon())
     application.setQuitOnLastWindowClosed(False)
     controller = ReadHelperApplication(application)
     controller.start()

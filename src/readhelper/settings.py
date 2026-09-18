@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QApplication,
 )
 
 from .hotkeys import parse_shortcut
@@ -44,6 +45,7 @@ class SettingsDialog(QDialog):
         self._color = config.style.border_color
         self.shortcut_edits: dict[str, QLineEdit] = {}
         self.setWindowTitle("ReadHelper 设置")
+        self.setWindowIcon(QApplication.windowIcon())
         self.setMinimumWidth(430)
         layout = QVBoxLayout(self)
         tabs = QTabWidget()
